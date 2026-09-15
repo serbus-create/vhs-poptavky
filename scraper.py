@@ -35,6 +35,7 @@ SMTP_PORT      = int(os.getenv("SMTP_PORT", "587"))
 
 SEEN_FILE = Path("seen_ids.json")
 BASE_URL  = "https://www.poptavky.cz"
+DEBUG     = True  # dočasně zapnuto pro diagnostiku prázdných výsledků
 
 # ──────────────────────────────────────────────
 # KATEGORIE relevantní pro vhs. (design, video, foto, tisk, web, branding)
@@ -87,6 +88,15 @@ def scrape_category(session: requests.Session, label: str, path: str) -> list[di
     except Exception as e:
         log(f"  ⚠️  {label}: chyba při stahování – {e}")
         return leads
+
+    # DIAGNOSTIKA – zjistíme, jestli stránka vůbec obsahuje odkazy na poptávky
+    if DEBUG:
+        poptavka_count_raw = r.text.count("/poptavka/")
+        log(f"  🔍 DEBUG {label}: status={r.status_code}, délka={len(r.text)} znaků, "
+            f"výskytů '/poptavka/'={poptavka_count_raw}")
+        if poptavka_count_raw == 0:
+            snippet = re.sub(r"\s+", " ", r.text)[:300]
+            log(f"     Prvních 300 znaků HTML: {snippet}")
 
     soup = BeautifulSoup(r.text, "html.parser")
 
