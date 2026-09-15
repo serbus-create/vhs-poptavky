@@ -83,11 +83,11 @@ async function scrapeCategory(page, label, path, debugSamples) {
   try {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 25000 });
     try {
-      await page.waitForSelector('a[href^="/poptavka/"]', { timeout: 8000 });
+      await page.waitForSelector('a[href^="/poptavka/"]', { timeout: 12000 });
     } catch {
       // možná prázdná kategorie
     }
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
   } catch (e) {
     log(`  ⚠️  ${label}: chyba při načítání – ${e.message}`);
     return leads;
@@ -188,8 +188,39 @@ async function main() {
   log(`   Pamatuji si ${Object.keys(seenMap).length} dříve viděných poptávek.`);
   log(`   Sleduji ${CATEGORIES.length} kategorií.\n`);
 
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({ userAgent: USER_AGENT });
+  const browser = await chromium.launch({
+    headless: true,
+    args: [
+      "--disable-blink-features=AutomationControlled",
+      "--disable-features=IsolateOrigins,site-per-process",
+    ],
+  });
+
+  const context = await browser.newContext({
+    userAgent: USER_AGENT,
+    viewport: { width: 1366, height: 900 },
+    locale: "cs-CZ",
+    timezoneId: "Europe/Prague",
+    extraHTTPHeaders: {
+      "Accept-Language": "cs-CZ,cs;q=0.9,en;q=0.8",
+    },
+  });
+
+  // Zamaskuj typické stopy automatizace (navigator.webdriver apod.)
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, "webdriver", { get: () => undefined });
+    Object.defineProperty(navigator, "languages", { get: () => ["cs-CZ", "cs", "en-US", "en"] });
+    Object.defineProperty(navigator, "plugins", { get: () => [1, 2, 3, 4, 5] });
+    // @ts-ignore
+    window.chrome = { runtime: {} };
+    const originalQuery = window.navigator.permissions.query;
+    window.navigator.permissions.query = (parameters) =>
+      parameters.name === "notifications"
+        ? Promise.resolve({ state: Notification.permission })
+        : originalQuery(parameters);
+  });
+
+  const page = await context.newPage();
 
   let allLeads = [];
   let debugShown = false;
