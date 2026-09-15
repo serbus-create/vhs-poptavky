@@ -77,7 +77,7 @@ HEADERS = {
 POPTAVKA_LINK_RE = re.compile(r'^/poptavka/(\d+)-')
 
 
-def scrape_category(session: requests.Session, label: str, path: str) -> list[dict]:
+def scrape_category(session: requests.Session, label: str, path: str, debug_samples: bool = False) -> list[dict]:
     """Stáhne a naparsuje jednu kategorii z poptavky.cz."""
     leads = []
     url = BASE_URL + path
@@ -94,7 +94,12 @@ def scrape_category(session: requests.Session, label: str, path: str) -> list[di
         poptavka_count_raw = r.text.count("/poptavka/")
         log(f"  🔍 DEBUG {label}: status={r.status_code}, délka={len(r.text)} znaků, "
             f"výskytů '/poptavka/'={poptavka_count_raw}")
-        if poptavka_count_raw == 0:
+        if poptavka_count_raw > 0 and debug_samples:
+            samples = re.findall(r'/poptavka/[^"\'\s<>]{0,80}', r.text)
+            unique_samples = list(dict.fromkeys(samples))[:6]
+            for s in unique_samples:
+                log(f"     vzorek: {s}")
+        elif poptavka_count_raw == 0 and debug_samples:
             snippet = re.sub(r"\s+", " ", r.text)[:300]
             log(f"     Prvních 300 znaků HTML: {snippet}")
 
@@ -301,8 +306,12 @@ def main():
     session = requests.Session()
     all_leads: list[dict] = []
 
+    debug_shown = False
     for label, path in CATEGORIES:
-        all_leads += scrape_category(session, label, path)
+        leads = scrape_category(session, label, path, debug_samples=(DEBUG and not debug_shown))
+        if DEBUG and not debug_shown:
+            debug_shown = True
+        all_leads += leads
         time.sleep(1.5)  # slušné chování vůči serveru
 
     # Dedup napříč kategoriemi (stejná poptávka může spadat do více kategorií)
