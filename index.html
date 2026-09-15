@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vhs. · Poptávky</title>
+<style>
+  :root {
+    --vhs: #E8390E;
+    --vhs-dark: #c42e0a;
+    --vhs-light: #fff5f3;
+    --bg: #f7f7f5;
+    --card: #ffffff;
+    --border: #e8e6e1;
+    --text: #1a1a1a;
+    --text-secondary: #6b6b68;
+    --text-muted: #9a9a96;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  header {
+    background: var(--vhs);
+    color: #fff;
+    padding: 28px 24px;
+  }
+  .header-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-mark {
+    font-family: Georgia, serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+  }
+  .logo-sub {
+    font-size: 13px;
+    opacity: 0.85;
+  }
+  .stats {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+  }
+  .stat-badge {
+    background: rgba(255,255,255,0.18);
+    padding: 6px 14px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .controls input, .controls select {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--card);
+    color: var(--text);
+  }
+  .controls input {
+    flex: 1;
+    min-width: 200px;
+  }
+  .controls select {
+    cursor: pointer;
+  }
+
+  .updated-line {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    transition: border-color 0.15s;
+  }
+  .card:hover {
+    border-color: var(--vhs);
+  }
+  .card.new {
+    border-left: 3px solid var(--vhs);
+  }
+
+  .badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  .badge-category { background: #eee; color: #555; }
+  .badge-price { background: #fef3e2; color: #a86a0a; }
+  .badge-region { background: #eef2ff; color: #4054b2; }
+  .badge-new { background: var(--vhs); color: #fff; }
+  .badge-date { color: var(--text-muted); background: none; padding: 2px 0; }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 6px;
+  }
+  .card-title a {
+    color: var(--text);
+    text-decoration: none;
+  }
+  .card-title a:hover {
+    color: var(--vhs);
+  }
+
+  .card-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0 0 10px;
+  }
+
+  .card-link {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--vhs);
+    text-decoration: none;
+  }
+  .card-link:hover {
+    text-decoration: underline;
+  }
+
+  .empty-state, .loading-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+
+  footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  footer a { color: var(--text-muted); }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17171a;
+      --card: #232326;
+      --border: #333336;
+      --text: #f0f0ee;
+      --text-secondary: #a8a8a4;
+      --text-muted: #7a7a76;
+    }
+    .badge-category { background: #333; color: #ccc; }
+    .badge-price { background: #3a2e1a; color: #f0b050; }
+    .badge-region { background: #22283f; color: #8090e0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-mark">vhs.</span>
+      <span class="logo-sub">Poptávkový hlídač</span>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+</header>
+
+<main>
+  <div class="controls">
+    <input type="text" id="search" placeholder="Hledat v poptávkách...">
+    <select id="categoryFilter">
+      <option value="">Všechny kategorie</option>
+    </select>
+  </div>
+  <div class="updated-line" id="updatedLine"></div>
+  <div id="list" class="loading-state">Načítám poptávky…</div>
+</main>
+
+<footer>
+  Automatický hlídač zakázek pro <strong>vhs. – výtvarně hybridní sdružení</strong>
+  · <a href="https://www.v-h-s.cz">v-h-s.cz</a>
+  · zdroj: <a href="https://www.poptavky.cz">poptavky.cz</a>
+</footer>
+
+<script>
+let allLeads = [];
+
+function timeAgo(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const h = Math.floor(diff / 3600000);
+  if (h < 1) return "před chvílí";
+  if (h < 24) return `před ${h} h`;
+  const d = Math.floor(h / 24);
+  return `před ${d} dny`;
+}
+
+function isNew(iso) {
+  return (Date.now() - new Date(iso).getTime()) < 6 * 3600 * 1000; // posledních 6h
+}
+
+function render() {
+  const search = document.getElementById('search').value.toLowerCase();
+  const cat = document.getElementById('categoryFilter').value;
+
+  let filtered = allLeads.filter(l => {
+    const matchSearch = !search || (l.title + ' ' + l.desc).toLowerCase().includes(search);
+    const matchCat = !cat || l.category === cat;
+    return matchSearch && matchCat;
+  });
+
+  const list = document.getElementById('list');
+
+  if (filtered.length === 0) {
+    list.className = 'empty-state';
+    list.innerHTML = 'Žádné poptávky neodpovídají filtru.';
+    return;
+  }
+
+  list.className = '';
+  list.innerHTML = filtered.map(l => {
+    const newBadge = isNew(l.firstSeen) ? '<span class="badge badge-new">NOVÉ</span>' : '';
+    const priceBadge = l.price ? `<span class="badge badge-price">${l.price}</span>` : '';
+    const regionBadge = l.region ? `<span class="badge badge-region">📍 ${l.region}</span>` : '';
+    const dateBadge = l.date ? `<span class="badge badge-date">${l.date}</span>` : '';
+
+    return `
+      <div class="card ${isNew(l.firstSeen) ? 'new' : ''}">
+        <div class="badges">
+          <span class="badge badge-category">${l.category}</span>
+          ${priceBadge}${regionBadge}${newBadge}${dateBadge}
+        </div>
+        <p class="card-title"><a href="${l.url}" target="_blank" rel="noopener">${l.title}</a></p>
+        ${l.desc ? `<p class="card-desc">${l.desc}</p>` : ''}
+        <a class="card-link" href="${l.url}" target="_blank" rel="noopener">Zobrazit poptávku →</a>
+      </div>
+    `;
+  }).join('');
+}
+
+async function load() {
+  try {
+    const res = await fetch('leads.json?t=' + Date.now());
+    const data = await res.json();
+    allLeads = data.leads || [];
+
+    document.getElementById('stats').innerHTML = `
+      <span class="stat-badge">${data.count} poptávek</span>
+      <span class="stat-badge">${data.newCount} nových</span>
+    `;
+    document.getElementById('updatedLine').textContent =
+      'Poslední aktualizace: ' + new Date(data.generatedAt).toLocaleString('cs-CZ');
+
+    const cats = [...new Set(allLeads.map(l => l.category))].sort();
+    const sel = document.getElementById('categoryFilter');
+    cats.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      sel.appendChild(opt);
+    });
+
+    render();
+  } catch (e) {
+    document.getElementById('list').className = 'empty-state';
+    document.getElementById('list').textContent = 'Data ještě nejsou k dispozici. Scraper zatím neproběhl.';
+  }
+}
+
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('categoryFilter').addEventListener('change', render);
+
+load();
+</script>
+
+</body>
+</html>
